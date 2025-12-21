@@ -1,0 +1,369 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f7f7f8;
+}
+
+/* =========================
+   LAYOUT
+========================= */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* =========================
+   SIDEBAR (CHAT LIST)
+========================= */
+.sidebar {
+  width: 260px;
+  background: #202123;
+  color: #ececf1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.new-chat-btn {
+  background: #343541;
+  border: 1px solid #4d4d4f;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.new-chat-btn:hover {
+  background: #40414f;
+}
+
+.chat-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #d1d5db;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-item:hover {
+  background: #343541;
+}
+
+.chat-item.active {
+  background: #40414f;
+  color: #fff;
+}
+
+/* =========================
+   MAIN CHAT AREA
+========================= */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f7f7f8;
+  overflow: hidden;
+}
+
+/* HEADER */
+.header {
+  padding: 20px 32px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header h2 {
+  margin: 0;
+}
+
+.header p {
+  margin: 4px 0 0;
+  color: #6b7280;
+}
+
+/* VIDEO INPUT */
+.video-input {
+  display: flex;
+  gap: 12px;
+  padding: 16px 32px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.video-input input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+}
+
+.video-input button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* =========================
+   CHAT MESSAGES
+========================= */
+.chat-container {
+  flex: 1;
+  width: 100%;
+  padding: 32px 8vw 160px;
+  overflow-y: auto;
+}
+
+/* USER MESSAGE */
+.message.user {
+  background: #2563eb;
+  color: white;
+  padding: 14px 18px;
+  border-radius: 14px;
+  max-width: 70%;
+  margin-left: auto;
+  margin-bottom: 24px;
+  white-space: pre-wrap;
+}
+
+/* ASSISTANT MESSAGE */
+.message.assistant {
+  background: white;
+  padding: 28px 32px;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
+  width: 100%;
+  line-height: 1.75;
+  font-size: 16px;
+  color: #111827;
+}
+
+/* =========================
+   MARKDOWN STYLING
+========================= */
+.message.assistant h1 {
+  font-size: 28px;
+  margin: 28px 0 14px;
+  font-weight: 700;
+}
+
+.message.assistant h2 {
+  font-size: 22px;
+  margin: 26px 0 12px;
+  font-weight: 700;
+}
+
+.message.assistant h3 {
+  font-size: 18px;
+  margin: 22px 0 10px;
+  font-weight: 600;
+}
+
+.message.assistant p {
+  margin: 12px 0;
+}
+
+.message.assistant ul,
+.message.assistant ol {
+  margin: 12px 0 12px 22px;
+}
+
+.message.assistant li {
+  margin: 6px 0;
+}
+
+/* CODE BLOCKS */
+.message.assistant code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.message.assistant pre {
+  background: #ffffff;
+  color: #000000;
+  padding: 16px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 18px 0;
+}
+
+/* MATH */
+.message.assistant .katex-display {
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+/* TABLES */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 18px 0;
+}
+
+.message.assistant table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.message.assistant th,
+.message.assistant td {
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.message.assistant th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+/* BLOCKQUOTE */
+.message.assistant blockquote {
+  border-left: 4px solid #2563eb;
+  padding-left: 14px;
+  margin: 16px 0;
+  color: #374151;
+  background: #f9fafb;
+}
+
+/* =========================
+   COMPOSER (INPUT)
+========================= */
+.composer-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 260px; /* sidebar width */
+  right: 0;
+  background: #f7f7f8;
+  border-top: 1px solid #e5e7eb;
+  padding: 16px 0;
+}
+
+.input-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  background: white;
+  padding: 16px 18px;
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.input-container textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 56px;
+  max-height: 120px;
+  background: transparent;
+}
+
+.input-container button {
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 12px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+.empty-state {
+  margin: auto;
+  text-align: center;
+}
+
+.empty-state button {
+  margin-top: 12px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+/* DELETE CHAT BUTTON */
+.chat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-item span {
+  flex: 1;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.delete-chat-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0;
+}
+
+.chat-item:hover .delete-chat-btn {
+  opacity: 1;
+}
+
+.delete-chat-btn:hover {
+  color: #ef4444;
+}
+/* VIDEO LOADER */
+.video-loader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 32px;
+  font-size: 14px;
+  color: #374151;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* SPINNER */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
