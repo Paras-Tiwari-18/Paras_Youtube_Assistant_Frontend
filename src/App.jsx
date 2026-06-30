@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import { YoutubeTranscript } from "youtube-transcript";
 import "katex/dist/katex.min.css";
 import "./App.css";
 
@@ -17,6 +18,38 @@ function createSessionId() {
 function beautifyMarkdown(text) {
   if (!text) return "";
   return text.replace(/\n{3,}/g, "\n\n").replace(/â€¢/g, "-").trim();
+}
+
+function extractVideoId(url) {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.hostname === "youtu.be") {
+      return parsed.pathname.slice(1);
+    }
+
+    if (
+      parsed.hostname.includes("youtube.com") &&
+      parsed.searchParams.has("v")
+    ) {
+      return parsed.searchParams.get("v");
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function getTranscript(url) {
+  const videoId = extractVideoId(url);
+
+  if (!videoId) {
+    throw new Error("Invalid YouTube URL");
+  }
+
+  const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+  return transcript.map((item) => item.text).join(" ");
 }
 
 export default function App() {
@@ -45,6 +78,7 @@ export default function App() {
       id: createSessionId(),
       title: "New Chat",
       youtubeUrl: "",
+      transcript: "",
       messages: [
         {
           role: "assistant",
@@ -53,6 +87,7 @@ export default function App() {
         },
       ],
     };
+
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
   }
@@ -80,22 +115,27 @@ export default function App() {
     try {
       setVideoLoading(true);
 
+      const transcript = await getTranscript(url);
+
       const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           session_id: activeChat.id,
           message: "__load_video__",
-          youtube_url: url,
+          transcript: transcript,
         }),
       });
 
       if (!res.ok) {
-        throw new Error(`Video load failed with status ${res.status}`);
+        throw new Error("Backend error");
       }
 
       updateChat({
         youtubeUrl: url,
+        transcript,
         messages: [
           ...activeChat.messages,
           {
@@ -107,12 +147,13 @@ export default function App() {
       });
     } catch (err) {
       console.error(err);
+
       updateChat({
         messages: [
           ...activeChat.messages,
           {
             role: "assistant",
-            content: "❌ Failed to load video. Please try again.",
+            content: "❌ Failed to load transcript/video.",
           },
         ],
       });
@@ -124,8 +165,14 @@ export default function App() {
   async function sendMessage() {
     if (!input.trim() || !activeChat) return;
 
-    const userMessage = { role: "user", content: input };
-    updateChat({ messages: [...activeChat.messages, userMessage] });
+    const userMessage = {
+      role: "user",
+      content: input,
+    };
+
+    updateChat({
+      messages: [...activeChat.messages, userMessage],
+    });
 
     setInput("");
     setLoading(true);
@@ -133,15 +180,18 @@ export default function App() {
     try {
       const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           session_id: activeChat.id,
           message: input,
+          transcript: activeChat.transcript,
         }),
       });
 
       if (!res.ok) {
-        throw new Error(`Chat request failed with status ${res.status}`);
+        throw new Error(`Status ${res.status}`);
       }
 
       const data = await res.json();
@@ -150,20 +200,29 @@ export default function App() {
         messages: [
           ...activeChat.messages,
           userMessage,
-          { role: "assistant", content: beautifyMarkdown(data.reply) },
+          {
+            role: "assistant",
+            content: beautifyMarkdown(data.reply),
+          },
         ],
       });
 
       if (activeChat.title === "New Chat") {
-        updateChat({ title: input.slice(0, 40) });
+        updateChat({
+          title: input.slice(0, 40),
+        });
       }
     } catch (err) {
       console.error(err);
+
       updateChat({
         messages: [
           ...activeChat.messages,
           userMessage,
-          { role: "assistant", content: "⚠️ Something went wrong." },
+          {
+            role: "assistant",
+            content: "⚠️ Something went wrong.",
+          },
         ],
       });
     } finally {
@@ -181,9 +240,14 @@ export default function App() {
         {chats.map((chat) => (
           <div
             key={chat.id}
-            className={`chat-item ${chat.id === activeChatId ? "active" : ""}`}
+            className={`chat-item ${
+              chat.id === activeChatId ? "active" : ""
+            }`}
           >
-            <span onClick={() => setActiveChatId(chat.id)}>{chat.title}</span>
+            <span onClick={() => setActiveChatId(chat.id)}>
+              {chat.title}
+            </span>
+
             <button
               className="delete-chat-btn"
               onClick={(e) => {
@@ -213,8 +277,11 @@ export default function App() {
               <input
                 placeholder="Paste a YouTube URL..."
                 value={activeChat.youtubeUrl}
-                onChange={(e) => updateChat({ youtubeUrl: e.target.value })}
+                onChange={(e) =>
+                  updateChat({ youtubeUrl: e.target.value })
+                }
               />
+
               <button
                 onClick={() => loadVideo(activeChat.youtubeUrl)}
                 disabled={videoLoading}
@@ -240,8 +307,11 @@ export default function App() {
               ))}
 
               {loading && (
-                <div className="message assistant">🧠 Thinking...</div>
+                <div className="message assistant">
+                  🧠 Thinking...
+                </div>
               )}
+
               <div ref={chatEndRef} />
             </div>
 
@@ -258,6 +328,7 @@ export default function App() {
                     }
                   }}
                 />
+
                 <button onClick={sendMessage} disabled={loading}>
                   Send
                 </button>
