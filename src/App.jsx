@@ -7,7 +7,8 @@ import "katex/dist/katex.min.css";
 import "./App.css";
 
 const API_URL =
-  import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000/api/chat";
+  import.meta.env.VITE_API_URL ||
+  "https://paras-tiwari-18-you-tube-project.hf.space/api/chat";
 
 function createSessionId() {
   return "chat-" + crypto.randomUUID();
@@ -104,7 +105,8 @@ export default function App() {
           },
         ],
       });
-    } catch {
+    } catch (err) {
+      console.error(err);
       updateChat({
         messages: [
           ...activeChat.messages,
@@ -155,7 +157,8 @@ export default function App() {
       if (activeChat.title === "New Chat") {
         updateChat({ title: input.slice(0, 40) });
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       updateChat({
         messages: [
           ...activeChat.messages,
@@ -219,13 +222,6 @@ export default function App() {
                 {videoLoading ? "Loading..." : "Load Video"}
               </button>
             </div>
-
-            {videoLoading && (
-              <div className="video-loader">
-                <span className="spinner" />
-                <span>Loading video & preparing notes...</span>
-              </div>
-            )}
 
             <div className="chat-container">
               {activeChat.messages.map((msg, i) => (
