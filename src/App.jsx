@@ -42,14 +42,31 @@ function extractVideoId(url) {
 }
 
 async function getTranscript(url) {
-  const videoId = extractVideoId(url);
+  try {
+    const videoId = extractVideoId(url);
+    console.log("VIDEO ID:", videoId);
 
-  if (!videoId) {
-    throw new Error("Invalid YouTube URL");
+    if (!videoId) {
+      throw new Error("Invalid YouTube URL");
+    }
+
+    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+
+    console.log("RAW TRANSCRIPT:", transcript);
+
+    if (!transcript || transcript.length === 0) {
+      throw new Error("Transcript empty");
+    }
+
+    const text = transcript.map((item) => item.text).join(" ");
+
+    console.log("TRANSCRIPT LENGTH:", text.length);
+
+    return text;
+  } catch (err) {
+    console.error("TRANSCRIPT ERROR:", err);
+    throw err;
   }
-
-  const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-  return transcript.map((item) => item.text).join(" ");
 }
 
 export default function App() {
@@ -115,22 +132,34 @@ export default function App() {
     try {
       setVideoLoading(true);
 
+      console.log("STEP 1: fetching transcript...");
       const transcript = await getTranscript(url);
+
+      if (!transcript || transcript.trim().length === 0) {
+        throw new Error("Transcript missing");
+      }
+
+      const payload = {
+        session_id: activeChat.id,
+        message: "__load_video__",
+        transcript,
+      };
+
+      console.log("PAYLOAD:", payload);
 
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          session_id: activeChat.id,
-          message: "__load_video__",
-          transcript: transcript,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const raw = await res.text();
+      console.log("BACKEND RESPONSE:", raw);
+
       if (!res.ok) {
-        throw new Error("Backend error");
+        throw new Error(raw);
       }
 
       updateChat({
@@ -146,14 +175,14 @@ export default function App() {
         ],
       });
     } catch (err) {
-      console.error(err);
+      console.error("FULL ERROR:", err);
 
       updateChat({
         messages: [
           ...activeChat.messages,
           {
             role: "assistant",
-            content: "❌ Failed to load transcript/video.",
+            content: `❌ ${err.message}`,
           },
         ],
       });
@@ -190,11 +219,11 @@ export default function App() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Status ${res.status}`);
-      }
-
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Backend error");
+      }
 
       updateChat({
         messages: [
@@ -221,7 +250,7 @@ export default function App() {
           userMessage,
           {
             role: "assistant",
-            content: "⚠️ Something went wrong.",
+            content: `⚠️ ${err.message}`,
           },
         ],
       });
