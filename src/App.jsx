@@ -6,19 +6,18 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import "./App.css";
 
-const API_URL = "https://paras-tiwari.onrender.com/api/chat";
+const API_URL =
+  import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000/api/chat";
 
-/* ---------- Helpers ---------- */
 function createSessionId() {
   return "chat-" + crypto.randomUUID();
 }
 
 function beautifyMarkdown(text) {
   if (!text) return "";
-  return text.replace(/\n{3,}/g, "\n\n").replace(/•/g, "-").trim();
+  return text.replace(/\n{3,}/g, "\n\n").replace(/â€¢/g, "-").trim();
 }
 
-/* ---------- App ---------- */
 export default function App() {
   const [chats, setChats] = useState(() => {
     return JSON.parse(localStorage.getItem("yt_chats")) || [];
@@ -30,19 +29,16 @@ export default function App() {
   const [videoLoading, setVideoLoading] = useState(false);
   const chatEndRef = useRef(null);
 
-  /* ---------- Persist chats ---------- */
   useEffect(() => {
     localStorage.setItem("yt_chats", JSON.stringify(chats));
   }, [chats]);
 
-  /* ---------- Scroll ---------- */
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chats, loading]);
 
   const activeChat = chats.find((c) => c.id === activeChatId);
 
-  /* ---------- New Chat ---------- */
   function startNewChat() {
     const newChat = {
       id: createSessionId(),
@@ -60,7 +56,6 @@ export default function App() {
     setActiveChatId(newChat.id);
   }
 
-  /* ---------- Delete Chat ---------- */
   function deleteChat(chatId) {
     if (!window.confirm("Delete this chat?")) return;
 
@@ -72,14 +67,19 @@ export default function App() {
     }
   }
 
-  /* ---------- Load Video ---------- */
+  function updateChat(update) {
+    setChats((prev) =>
+      prev.map((c) => (c.id === activeChatId ? { ...c, ...update } : c))
+    );
+  }
+
   async function loadVideo(url) {
     if (!url || !activeChat || videoLoading) return;
 
     try {
       setVideoLoading(true);
 
-      await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,6 +88,10 @@ export default function App() {
           youtube_url: url,
         }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Video load failed with status ${res.status}`);
+      }
 
       updateChat({
         youtubeUrl: url,
@@ -115,7 +119,6 @@ export default function App() {
     }
   }
 
-  /* ---------- Send Message ---------- */
   async function sendMessage() {
     if (!input.trim() || !activeChat) return;
 
@@ -134,6 +137,10 @@ export default function App() {
           message: input,
         }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Chat request failed with status ${res.status}`);
+      }
 
       const data = await res.json();
 
@@ -161,17 +168,8 @@ export default function App() {
     }
   }
 
-  /* ---------- Update Chat ---------- */
-  function updateChat(update) {
-    setChats((prev) =>
-      prev.map((c) => (c.id === activeChatId ? { ...c, ...update } : c))
-    );
-  }
-
-  /* ---------- UI ---------- */
   return (
     <div className="app-layout">
-      {/* -------- Sidebar -------- */}
       <aside className="sidebar">
         <button className="new-chat-btn" onClick={startNewChat}>
           + New Chat
@@ -180,13 +178,9 @@ export default function App() {
         {chats.map((chat) => (
           <div
             key={chat.id}
-            className={`chat-item ${
-              chat.id === activeChatId ? "active" : ""
-            }`}
+            className={`chat-item ${chat.id === activeChatId ? "active" : ""}`}
           >
-            <span onClick={() => setActiveChatId(chat.id)}>
-              {chat.title}
-            </span>
+            <span onClick={() => setActiveChatId(chat.id)}>{chat.title}</span>
             <button
               className="delete-chat-btn"
               onClick={(e) => {
@@ -200,7 +194,6 @@ export default function App() {
         ))}
       </aside>
 
-      {/* -------- Main Chat -------- */}
       <main className="chat-main">
         {!activeChat ? (
           <div className="empty-state">
@@ -215,24 +208,22 @@ export default function App() {
 
             <div className="video-input">
               <input
-                placeholder="Paste a YouTube URL…"
+                placeholder="Paste a YouTube URL..."
                 value={activeChat.youtubeUrl}
-                onChange={(e) =>
-                  updateChat({ youtubeUrl: e.target.value })
-                }
+                onChange={(e) => updateChat({ youtubeUrl: e.target.value })}
               />
               <button
                 onClick={() => loadVideo(activeChat.youtubeUrl)}
                 disabled={videoLoading}
               >
-                {videoLoading ? "Loading…" : "Load Video"}
+                {videoLoading ? "Loading..." : "Load Video"}
               </button>
             </div>
 
             {videoLoading && (
               <div className="video-loader">
                 <span className="spinner" />
-                <span>Loading video & preparing notes…</span>
+                <span>Loading video & preparing notes...</span>
               </div>
             )}
 
@@ -253,7 +244,7 @@ export default function App() {
               ))}
 
               {loading && (
-                <div className="message assistant">🧠 Thinking…</div>
+                <div className="message assistant">🧠 Thinking...</div>
               )}
               <div ref={chatEndRef} />
             </div>
@@ -262,7 +253,7 @@ export default function App() {
               <div className="input-container">
                 <textarea
                   value={input}
-                  placeholder="Ask something…"
+                  placeholder="Ask something..."
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {

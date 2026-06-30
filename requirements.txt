@@ -1,4 +1,0 @@
-react-markdown 
-remark-gfm 
-rehype-katex 
-katex
